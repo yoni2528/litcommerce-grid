@@ -184,6 +184,20 @@
       .mini-btn:hover {
         border-color: var(--accent);
       }
+      .mini-btn.primary {
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        color: #1a1308;
+        border-color: transparent;
+        font-weight: 600;
+        padding: 3px 12px;
+      }
+      .mini-btn.primary:hover {
+        filter: brightness(1.05);
+      }
+      .mini-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
       .grid {
         max-width: 1480px;
         margin: 0 auto;
@@ -547,6 +561,13 @@
           <button id="onlyPicked" class="mini-btn" title="הצג רק נבחרו">
             הצג
           </button>
+          <button
+            id="pushPicked"
+            class="mini-btn primary"
+            title="העלה כ-Draft ל-TOPAZ"
+          >
+            Push → TOPAZ
+          </button>
           <button id="exportPicked" class="mini-btn" title="הורד JSON של הנבחרים">
             ↓
           </button>
@@ -571,19 +592,18 @@
       <div class="modal">
         <h2>חיבור ל-LitCommerce</h2>
         <p>
-          הדבק כאן את הערך של ה-headers
-          <code>authorization</code> ו-<code>selftoken</code> מתוך כל בקשה
-          ל-<code>api.litcommerce.com</code>
-          ב-DevTools.<br />
-          (אפשר גם פשוט להדביק את שורת ה-Request headers הגולמית — נחלץ אוטומטית.)
+          הדבק את 3 ה-headers מ-<code>api.litcommerce.com</code>:
+          <code>authorization</code>, <code>selftoken</code>, ו-<code>permission</code>
+          (האחרון נדרש ל-Push ל-TOPAZ).<br />
+          אפשר להדביק את כל שורות ה-Request Headers הגולמיות — נחלץ אוטומטית.
         </p>
         <textarea
           id="paste"
-          placeholder="authorization: JWT eyJ...&#10;selftoken: eyJ..."
+          placeholder="authorization: JWT eyJ...&#10;selftoken: eyJ...&#10;permission: eyJ..."
         ></textarea>
         <div class="hint">
-          DevTools → Network → לחץ על בקשה כלשהי ל-api.litcommerce.com → Headers
-          → Request Headers → העתק את השורות של authorization + selftoken
+          DevTools → Network → בקשה כלשהי ל-api.litcommerce.com → Headers →
+          Request Headers → העתק authorization + selftoken + permission
         </div>
         <div class="modal-row">
           <button class="btn" id="cancelToken">סגור</button>
@@ -598,6 +618,8 @@
       const PICKED_KEY = "litcommerce.picked.v1";
       const CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12h
       const API = "https://api.litcommerce.com/api/products";
+      const LISTINGS_API = "https://api.litcommerce.com/api/products/listings";
+      const TOPAZ_CHANNEL_ID = 131178;
       const LIMIT = 100;
 
       // ----- Selection state (persistent) -----
@@ -699,6 +721,7 @@
         clearPicked: $("#clearPicked"),
         onlyPicked: $("#onlyPicked"),
         exportPicked: $("#exportPicked"),
+        pushPicked: $("#pushPicked"),
       };
 
       let creds = null;
@@ -717,7 +740,7 @@
       }
 
       function parsePaste(text) {
-        const out = { authorization: "", selftoken: "" };
+        const out = { authorization: "", selftoken: "", permission: "" };
         for (const line of text.split(/\n+/)) {
           const m = line.match(/^\s*([\w-]+)\s*:\s*(.+)\s*$/);
           if (!m) continue;
@@ -725,6 +748,7 @@
           const v = m[2].trim();
           if (k === "authorization") out.authorization = v;
           if (k === "selftoken") out.selftoken = v;
+          if (k === "permission") out.permission = v;
         }
         // Also accept plain JWT values on their own lines
         if (!out.authorization) {
@@ -740,6 +764,10 @@
             out.selftoken = jwts[1].startsWith("JWT ")
               ? jwts[1].slice(4)
               : jwts[1];
+          if (jwts[2])
+            out.permission = jwts[2].startsWith("JWT ")
+              ? jwts[2].slice(4)
+              : jwts[2];
         }
         return out;
       }
@@ -767,8 +795,7 @@
         await loadAll();
       });
 
-      async function fetchPage(page) {
-        const url = `${API}?limit=${LIMIT}&page=${page}&tab=instock&sort=`;
+      function authHeaders() {
         const headers = {
           accept: "application/json, text/plain, */*",
           authorization: creds.authorization,
@@ -777,12 +804,43 @@
             .replace(/\.\d+Z$/, "+00:00"),
         };
         if (creds.selftoken) headers.selftoken = creds.selftoken;
-        const res = await fetch(url, { headers });
+        if (creds.permission) headers.permission = creds.permission;
+        return headers;
+      }
+
+      async function fetchPage(page) {
+        const url = `${API}?limit=${LIMIT}&page=${page}&tab=instock&sort=`;
+        const res = await fetch(url, { headers: authHeaders() });
         if (res.status === 401 || res.status === 403) {
           throw new Error("UNAUTHORIZED");
         }
         if (!res.ok) throw new Error("HTTP " + res.status);
         return res.json();
+      }
+
+      async function pushToChannel(productIds, channelId = TOPAZ_CHANNEL_ID) {
+        const body = {
+          channel_ids: [channelId],
+          product_ids: productIds,
+          select_all: false,
+        };
+        const res = await fetch(LISTINGS_API, {
+          method: "POST",
+          headers: {
+            ...authHeaders(),
+            "content-type": "application/json;charset=UTF-8",
+          },
+          body: JSON.stringify(body),
+        });
+        if (res.status === 401 || res.status === 403)
+          throw new Error("UNAUTHORIZED");
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || json.code !== 200) {
+          throw new Error(
+            json.message || `HTTP ${res.status} ${res.statusText}`,
+          );
+        }
+        return json;
       }
 
       async function loadAll(force = false) {
@@ -1052,6 +1110,53 @@
         els.onlyPicked.textContent = showOnlyPicked ? "הצג הכל" : "הצג";
         renderGrid();
       });
+      els.pushPicked.addEventListener("click", async () => {
+        const ids = [...picked];
+        if (!ids.length) return;
+        if (!creds.permission) {
+          alert(
+            "חסר 'permission' token. פתח ⚙ והדבק שוב את ה-headers (כולל permission).",
+          );
+          openTokenModal();
+          return;
+        }
+        if (
+          !confirm(
+            `להעלות ${ids.length} מוצרים כ-Draft ל-TOPAZ?\n\nהם יהפכו ל-Draft ב-Shopify (לא מפורסמים), ותצטרך לאשר ב-LitCommerce או Shopify.`,
+          )
+        )
+          return;
+        const orig = els.pushPicked.textContent;
+        els.pushPicked.disabled = true;
+        els.pushPicked.textContent = "שולח…";
+        const prevStatus = els.status.textContent;
+        try {
+          // Chunk to avoid timeouts on huge selections
+          const CHUNK = 50;
+          let sent = 0;
+          for (let i = 0; i < ids.length; i += CHUNK) {
+            const part = ids.slice(i, i + CHUNK);
+            els.status.textContent = `שולח ${sent + part.length}/${ids.length}…`;
+            await pushToChannel(part);
+            sent += part.length;
+          }
+          els.status.textContent = `✓ ${sent} מוצרים נשלחו ל-TOPAZ כ-Draft`;
+          alert(`נשלחו ${sent} מוצרים ל-TOPAZ כ-Draft.`);
+        } catch (e) {
+          els.status.textContent = "שגיאה: " + e.message;
+          if (e.message === "UNAUTHORIZED") {
+            alert("Auth נכשל — הזן טוקנים מעודכנים.");
+            openTokenModal();
+          } else {
+            alert("שגיאה: " + e.message);
+          }
+          setTimeout(() => (els.status.textContent = prevStatus), 5000);
+        } finally {
+          els.pushPicked.disabled = false;
+          els.pushPicked.textContent = orig;
+        }
+      });
+
       els.exportPicked.addEventListener("click", () => {
         const list = products.filter((p) => picked.has(p.id));
         const blob = new Blob([JSON.stringify(list, null, 2)], {
