@@ -1,0 +1,1081 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LitCommerce Grid · In Stock</title>
+    <style>
+      :root {
+        --bg: #0b0b0e;
+        --panel: #14141a;
+        --panel-2: #1c1c25;
+        --line: #25252f;
+        --text: #ececf1;
+        --muted: #8b8b97;
+        --accent: #c9a35c;
+        --accent-2: #f3d68a;
+        --ok: #4ade80;
+        --warn: #f59e0b;
+        --danger: #ef4444;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Heebo", "Assistant",
+          "Segoe UI", system-ui, sans-serif;
+        font-size: 14px;
+        min-height: 100vh;
+      }
+      a {
+        color: var(--accent-2);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+        color: inherit;
+      }
+      header.top {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        backdrop-filter: blur(18px);
+        background: color-mix(in oklab, var(--bg) 75%, transparent);
+        border-bottom: 1px solid var(--line);
+      }
+      .top-row {
+        max-width: 1480px;
+        margin: 0 auto;
+        padding: 14px 24px;
+        display: grid;
+        gap: 12px;
+        grid-template-columns: auto 1fr auto auto auto;
+        align-items: center;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+      }
+      .brand .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 99px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        box-shadow: 0 0 12px var(--accent);
+      }
+      .brand .sub {
+        color: var(--muted);
+        font-weight: 400;
+        font-size: 12px;
+        margin-inline-start: 6px;
+      }
+      .field {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 8px 12px;
+        color: var(--text);
+        outline: none;
+        min-width: 180px;
+        transition: border-color 0.15s;
+      }
+      .field:focus {
+        border-color: var(--accent);
+      }
+      input.field {
+        width: 100%;
+      }
+      select.field {
+        cursor: pointer;
+      }
+      .btn {
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        color: var(--text);
+        padding: 8px 14px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition:
+          border-color 0.15s,
+          background 0.15s;
+      }
+      .btn:hover {
+        border-color: var(--accent);
+      }
+      .btn.primary {
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        color: #1a1308;
+        border-color: transparent;
+        font-weight: 600;
+      }
+      .stats {
+        max-width: 1480px;
+        margin: 0 auto;
+        padding: 8px 24px 0;
+        display: flex;
+        gap: 16px;
+        color: var(--muted);
+        font-size: 12.5px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .stats b {
+        color: var(--text);
+        font-weight: 600;
+      }
+      .progress {
+        flex: 1;
+        height: 4px;
+        background: var(--panel);
+        border-radius: 99px;
+        overflow: hidden;
+        max-width: 240px;
+      }
+      .progress > div {
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent), var(--accent-2));
+        width: 0%;
+        transition: width 0.2s;
+      }
+      .picked-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 6px 4px 10px;
+        background: linear-gradient(
+          135deg,
+          color-mix(in oklab, var(--accent) 22%, transparent),
+          color-mix(in oklab, var(--accent-2) 14%, transparent)
+        );
+        border: 1px solid color-mix(in oklab, var(--accent) 35%, var(--line));
+        border-radius: 99px;
+        color: var(--text);
+        font-size: 12px;
+      }
+      .picked-chip b {
+        color: var(--accent-2);
+      }
+      .mini-btn {
+        background: transparent;
+        border: 1px solid var(--line);
+        color: var(--text);
+        border-radius: 99px;
+        padding: 2px 8px;
+        font-size: 11px;
+        cursor: pointer;
+        transition: border-color 0.15s;
+      }
+      .mini-btn:hover {
+        border-color: var(--accent);
+      }
+      .grid {
+        max-width: 1480px;
+        margin: 0 auto;
+        padding: 20px 24px 80px;
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition:
+          transform 0.18s ease,
+          border-color 0.18s ease,
+          box-shadow 0.18s ease;
+        cursor: pointer;
+        position: relative;
+      }
+      .card:hover {
+        transform: translateY(-2px);
+        border-color: color-mix(in oklab, var(--accent) 50%, var(--line));
+        box-shadow: 0 12px 30px -16px rgba(201, 163, 92, 0.35);
+      }
+      .card .img-wrap {
+        position: relative;
+        aspect-ratio: 1 / 1;
+        background:
+          repeating-conic-gradient(#1a1a22 0% 25%, #161620 0% 50%) 50% / 16px
+          16px;
+        overflow: hidden;
+      }
+      .card img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.4s ease;
+      }
+      .card:hover img {
+        transform: scale(1.04);
+      }
+      .pick {
+        position: absolute;
+        top: 8px;
+        inset-inline-start: 8px;
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(6px);
+        border: 1.5px solid rgba(255, 255, 255, 0.35);
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        z-index: 2;
+        transition:
+          background 0.15s,
+          border-color 0.15s,
+          transform 0.1s;
+      }
+      .pick:hover {
+        border-color: var(--accent-2);
+        transform: scale(1.06);
+      }
+      .pick svg {
+        width: 16px;
+        height: 16px;
+        stroke: #fff;
+        stroke-width: 3;
+        fill: none;
+        opacity: 0;
+        transition: opacity 0.12s;
+      }
+      .card.picked .pick {
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        border-color: transparent;
+      }
+      .card.picked .pick svg {
+        opacity: 1;
+        stroke: #1a1308;
+      }
+      .card.picked {
+        border-color: color-mix(in oklab, var(--accent) 60%, var(--line));
+        box-shadow: 0 0 0 1px var(--accent) inset;
+      }
+      .qty-pill {
+        position: absolute;
+        top: 8px;
+        inset-inline-end: 8px;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(6px);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 99px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .qty-pill.low {
+        color: var(--warn);
+      }
+      .qty-pill.out {
+        color: var(--danger);
+      }
+      .listed-pill {
+        position: absolute;
+        bottom: 8px;
+        inset-inline-start: 8px;
+        background: rgba(74, 222, 128, 0.16);
+        color: var(--ok);
+        font-size: 10.5px;
+        font-weight: 600;
+        padding: 3px 7px;
+        border-radius: 99px;
+        border: 1px solid rgba(74, 222, 128, 0.3);
+      }
+      .body {
+        padding: 12px 14px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .name {
+        font-size: 13.5px;
+        font-weight: 600;
+        line-height: 1.35;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        min-height: calc(1.35em * 2);
+      }
+      .sku {
+        color: var(--muted);
+        font-size: 11px;
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        letter-spacing: 0.02em;
+      }
+      .price-row {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin-top: 2px;
+      }
+      .price {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--accent-2);
+      }
+      .price-sale {
+        font-size: 12px;
+        color: var(--muted);
+        text-decoration: line-through;
+      }
+      .cats {
+        margin-top: 4px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .cat {
+        font-size: 10.5px;
+        padding: 2px 7px;
+        border-radius: 99px;
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        color: var(--muted);
+      }
+      .empty {
+        grid-column: 1 / -1;
+        padding: 80px 0;
+        text-align: center;
+        color: var(--muted);
+      }
+      /* Token modal */
+      .modal-bg {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        padding: 20px;
+      }
+      .modal {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 28px;
+        max-width: 560px;
+        width: 100%;
+      }
+      .modal h2 {
+        margin: 0 0 6px;
+        font-size: 20px;
+      }
+      .modal p {
+        color: var(--muted);
+        font-size: 13px;
+        margin: 0 0 16px;
+      }
+      .modal textarea {
+        width: 100%;
+        min-height: 96px;
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 12px;
+        color: var(--text);
+        outline: none;
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 11px;
+        direction: ltr;
+        resize: vertical;
+      }
+      .modal textarea:focus {
+        border-color: var(--accent);
+      }
+      .modal-row {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 14px;
+      }
+      .hint {
+        color: var(--muted);
+        font-size: 11.5px;
+        margin-top: 6px;
+        direction: ltr;
+        text-align: left;
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
+      /* Detail drawer */
+      .drawer-bg {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(6px);
+        z-index: 90;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+      }
+      .drawer-bg.open {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .drawer {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        inset-inline-start: 0;
+        width: min(560px, 100%);
+        background: var(--panel);
+        border-inline-end: 1px solid var(--line);
+        z-index: 91;
+        /* RTL: drawer is anchored to the right edge; translate visually right to hide */
+        transform: translateX(100%);
+        transition: transform 0.25s ease;
+        overflow-y: auto;
+        padding: 24px 24px 60px;
+      }
+      [dir="ltr"] .drawer {
+        transform: translateX(-100%);
+      }
+      .drawer.open {
+        transform: translateX(0);
+      }
+      .drawer h3 {
+        margin: 0 0 12px;
+      }
+      .drawer .imgs {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 8px;
+        margin: 14px 0;
+      }
+      .drawer .imgs img {
+        width: 100%;
+        aspect-ratio: 1/1;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+      }
+      .drawer .meta {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: 6px 14px;
+        font-size: 13px;
+        margin: 14px 0;
+      }
+      .drawer .meta dt {
+        color: var(--muted);
+      }
+      .drawer .desc {
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid var(--line);
+        font-size: 13px;
+        line-height: 1.6;
+        color: #d5d5dc;
+      }
+      .drawer .desc img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin: 6px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="top">
+      <div class="top-row">
+        <div class="brand">
+          <span class="dot"></span>
+          <span>Lit Grid<span class="sub">· in stock</span></span>
+        </div>
+        <input
+          id="q"
+          class="field"
+          type="search"
+          placeholder="חיפוש לפי שם / SKU…"
+          autocomplete="off"
+        />
+        <select id="cat" class="field" title="קטגוריה">
+          <option value="">כל הקטגוריות</option>
+        </select>
+        <select id="sort" class="field" title="מיון">
+          <option value="updated_desc">עודכן · חדש → ישן</option>
+          <option value="updated_asc">עודכן · ישן → חדש</option>
+          <option value="name_asc">שם · א → ת</option>
+          <option value="price_desc">מחיר · גבוה → נמוך</option>
+          <option value="price_asc">מחיר · נמוך → גבוה</option>
+          <option value="qty_desc">מלאי · גבוה → נמוך</option>
+          <option value="qty_asc">מלאי · נמוך → גבוה</option>
+        </select>
+        <button id="reload" class="btn" title="טען מחדש">↻</button>
+      </div>
+      <div class="stats">
+        <span><b id="count">0</b> מוצרים</span>
+        <span>·</span>
+        <span>מוצג <b id="visible">0</b></span>
+        <span>·</span>
+        <span id="status">טוען…</span>
+        <div class="progress"><div id="bar"></div></div>
+        <span
+          id="pickedChip"
+          class="picked-chip"
+          style="display: none; margin-inline-start: auto"
+        >
+          <b id="pickedCount">0</b> נבחרו
+          <button id="onlyPicked" class="mini-btn" title="הצג רק נבחרו">
+            הצג
+          </button>
+          <button id="exportPicked" class="mini-btn" title="הורד JSON של הנבחרים">
+            ↓
+          </button>
+          <button id="clearPicked" class="mini-btn" title="נקה בחירה">
+            ✕
+          </button>
+        </span>
+        <span style="margin-inline-start: 8px"
+          ><button id="settings" class="btn" style="padding: 4px 10px">
+            ⚙
+          </button></span
+        >
+      </div>
+    </header>
+
+    <main id="grid" class="grid"></main>
+
+    <div id="drawer-bg" class="drawer-bg"></div>
+    <aside id="drawer" class="drawer" aria-hidden="true"></aside>
+
+    <div id="modal-bg" class="modal-bg" style="display: none">
+      <div class="modal">
+        <h2>חיבור ל-LitCommerce</h2>
+        <p>
+          הדבק כאן את הערך של ה-headers
+          <code>authorization</code> ו-<code>selftoken</code> מתוך כל בקשה
+          ל-<code>api.litcommerce.com</code>
+          ב-DevTools.<br />
+          (אפשר גם פשוט להדביק את שורת ה-Request headers הגולמית — נחלץ אוטומטית.)
+        </p>
+        <textarea
+          id="paste"
+          placeholder="authorization: JWT eyJ...&#10;selftoken: eyJ..."
+        ></textarea>
+        <div class="hint">
+          DevTools → Network → לחץ על בקשה כלשהי ל-api.litcommerce.com → Headers
+          → Request Headers → העתק את השורות של authorization + selftoken
+        </div>
+        <div class="modal-row">
+          <button class="btn" id="cancelToken">סגור</button>
+          <button class="btn primary" id="saveToken">שמור והמשך</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const LS_KEY = "litcommerce.creds.v1";
+      const CACHE_KEY = "litcommerce.products.v1";
+      const PICKED_KEY = "litcommerce.picked.v1";
+      const CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12h
+      const API = "https://api.litcommerce.com/api/products";
+      const LIMIT = 100;
+
+      // ----- Selection state (persistent) -----
+      let picked = new Set();
+      let showOnlyPicked = false;
+      function loadPicked() {
+        try {
+          const arr = JSON.parse(localStorage.getItem(PICKED_KEY) || "[]");
+          picked = new Set(Array.isArray(arr) ? arr : []);
+        } catch {
+          picked = new Set();
+        }
+      }
+      function savePicked() {
+        localStorage.setItem(PICKED_KEY, JSON.stringify([...picked]));
+      }
+      function togglePick(id) {
+        if (picked.has(id)) picked.delete(id);
+        else picked.add(id);
+        savePicked();
+      }
+
+      // Keep only fields used by the grid + drawer to stay under the localStorage cap.
+      function trim(p) {
+        return {
+          id: p.id,
+          name: p.name,
+          lower_name: p.lower_name,
+          sku: p.sku,
+          price: p.price,
+          qty: p.qty,
+          weight: p.weight,
+          weight_units: p.weight_units,
+          thumb_image: p.thumb_image ? { url: p.thumb_image.url } : null,
+          images: (p.images || []).map((i) => ({ url: i.url })),
+          category_name_list: p.category_name_list || [],
+          description: p.description,
+          short_description: p.short_description,
+          updated_at: p.updated_at,
+          created_at: p.created_at,
+          updated_time: p.updated_time,
+          seo_url: p.seo_url,
+          active_listings: (p.active_listings || []).length, // store count only
+        };
+      }
+
+      function loadCache() {
+        try {
+          const raw = localStorage.getItem(CACHE_KEY);
+          if (!raw) return null;
+          const obj = JSON.parse(raw);
+          if (!obj || !Array.isArray(obj.products)) return null;
+          return obj;
+        } catch {
+          return null;
+        }
+      }
+      function saveCache(products) {
+        try {
+          localStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify({ fetchedAt: Date.now(), products }),
+          );
+        } catch (e) {
+          console.warn("cache save failed", e);
+        }
+      }
+      function clearCache() {
+        localStorage.removeItem(CACHE_KEY);
+      }
+      function fmtAgo(ts) {
+        const s = Math.floor((Date.now() - ts) / 1000);
+        if (s < 60) return `לפני ${s}ש'`;
+        if (s < 3600) return `לפני ${Math.floor(s / 60)} דק'`;
+        if (s < 86400) return `לפני ${Math.floor(s / 3600)} שע'`;
+        return `לפני ${Math.floor(s / 86400)} ימים`;
+      }
+
+      const $ = (s) => document.querySelector(s);
+      const els = {
+        grid: $("#grid"),
+        q: $("#q"),
+        cat: $("#cat"),
+        sort: $("#sort"),
+        reload: $("#reload"),
+        settings: $("#settings"),
+        count: $("#count"),
+        visible: $("#visible"),
+        status: $("#status"),
+        bar: $("#bar"),
+        modal: $("#modal-bg"),
+        paste: $("#paste"),
+        saveToken: $("#saveToken"),
+        cancelToken: $("#cancelToken"),
+        drawer: $("#drawer"),
+        drawerBg: $("#drawer-bg"),
+        pickedChip: $("#pickedChip"),
+        pickedCount: $("#pickedCount"),
+        clearPicked: $("#clearPicked"),
+        onlyPicked: $("#onlyPicked"),
+        exportPicked: $("#exportPicked"),
+      };
+
+      let creds = null;
+      let products = [];
+      let categories = new Map(); // name → count
+
+      function loadCreds() {
+        try {
+          return JSON.parse(localStorage.getItem(LS_KEY) || "null");
+        } catch {
+          return null;
+        }
+      }
+      function saveCreds(c) {
+        localStorage.setItem(LS_KEY, JSON.stringify(c));
+      }
+
+      function parsePaste(text) {
+        const out = { authorization: "", selftoken: "" };
+        for (const line of text.split(/\n+/)) {
+          const m = line.match(/^\s*([\w-]+)\s*:\s*(.+)\s*$/);
+          if (!m) continue;
+          const k = m[1].toLowerCase();
+          const v = m[2].trim();
+          if (k === "authorization") out.authorization = v;
+          if (k === "selftoken") out.selftoken = v;
+        }
+        // Also accept plain JWT values on their own lines
+        if (!out.authorization) {
+          const lines = text.split(/\s+/).filter(Boolean);
+          const jwts = lines.filter((l) =>
+            /^(JWT\s+)?[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(l),
+          );
+          if (jwts[0])
+            out.authorization = jwts[0].startsWith("JWT ")
+              ? jwts[0]
+              : "JWT " + jwts[0];
+          if (jwts[1])
+            out.selftoken = jwts[1].startsWith("JWT ")
+              ? jwts[1].slice(4)
+              : jwts[1];
+        }
+        return out;
+      }
+
+      function openTokenModal() {
+        els.modal.style.display = "flex";
+        els.paste.value = "";
+        setTimeout(() => els.paste.focus(), 50);
+      }
+      function closeTokenModal() {
+        els.modal.style.display = "none";
+      }
+
+      els.settings.addEventListener("click", openTokenModal);
+      els.cancelToken.addEventListener("click", closeTokenModal);
+      els.saveToken.addEventListener("click", async () => {
+        const parsed = parsePaste(els.paste.value);
+        if (!parsed.authorization) {
+          alert("לא זוהה authorization. בדוק שהדבקת את שורות ה-headers.");
+          return;
+        }
+        creds = parsed;
+        saveCreds(creds);
+        closeTokenModal();
+        await loadAll();
+      });
+
+      async function fetchPage(page) {
+        const url = `${API}?limit=${LIMIT}&page=${page}&tab=instock&sort=`;
+        const headers = {
+          accept: "application/json, text/plain, */*",
+          authorization: creds.authorization,
+          "request-date": new Date()
+            .toISOString()
+            .replace(/\.\d+Z$/, "+00:00"),
+        };
+        if (creds.selftoken) headers.selftoken = creds.selftoken;
+        const res = await fetch(url, { headers });
+        if (res.status === 401 || res.status === 403) {
+          throw new Error("UNAUTHORIZED");
+        }
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      }
+
+      async function loadAll(force = false) {
+        // 1) Try cache first
+        if (!force) {
+          const cached = loadCache();
+          if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
+            products = cached.products;
+            els.count.textContent = products.length;
+            els.bar.style.width = "100%";
+            els.status.textContent = `מ-cache · ${fmtAgo(cached.fetchedAt)}`;
+            buildCategories();
+            renderGrid();
+            return;
+          }
+        }
+
+        // 2) Otherwise fetch fresh from API
+        products = [];
+        renderGrid();
+        els.status.textContent = "טוען עמוד 1…";
+        els.bar.style.width = "5%";
+        try {
+          const first = await fetchPage(1);
+          const total = first.count || first.data.length;
+          products.push(...first.data.map(trim));
+          els.count.textContent = total;
+          const pages = Math.ceil(total / LIMIT);
+          els.bar.style.width = `${(1 / pages) * 100}%`;
+          els.status.textContent = `עמוד 1 / ${pages}`;
+          renderGrid();
+
+          // Fetch the rest in parallel (small concurrency)
+          const tasks = [];
+          for (let p = 2; p <= pages; p++) tasks.push(p);
+          let done = 1;
+          const CONC = 4;
+          async function worker() {
+            while (tasks.length) {
+              const p = tasks.shift();
+              const res = await fetchPage(p);
+              products.push(...res.data.map(trim));
+              done++;
+              els.bar.style.width = `${(done / pages) * 100}%`;
+              els.status.textContent = `עמוד ${done} / ${pages}`;
+              if (done % 2 === 0 || done === pages) renderGrid();
+            }
+          }
+          await Promise.all(Array.from({ length: CONC }, worker));
+          saveCache(products);
+          els.status.textContent = `נטען ✓ · ${fmtAgo(Date.now())}`;
+          buildCategories();
+          renderGrid();
+        } catch (e) {
+          if (e.message === "UNAUTHORIZED") {
+            els.status.textContent = "נכשל auth — הזן טוקן חדש";
+            openTokenModal();
+          } else {
+            els.status.textContent = "שגיאה: " + e.message;
+          }
+        }
+      }
+
+      function buildCategories() {
+        categories.clear();
+        for (const p of products) {
+          const cats = p.category_name_list || [];
+          for (const c of cats) {
+            if (!c) continue;
+            categories.set(c, (categories.get(c) || 0) + 1);
+          }
+        }
+        const sorted = [...categories.entries()].sort((a, b) => b[1] - a[1]);
+        const prev = els.cat.value;
+        els.cat.innerHTML =
+          '<option value="">כל הקטגוריות</option>' +
+          sorted
+            .map(
+              ([name, n]) =>
+                `<option value="${name}">${name} (${n})</option>`,
+            )
+            .join("");
+        els.cat.value = prev;
+      }
+
+      function filterSort(list) {
+        const q = els.q.value.trim().toLowerCase();
+        const cat = els.cat.value;
+        let out = list;
+        if (showOnlyPicked) out = out.filter((p) => picked.has(p.id));
+        if (q)
+          out = out.filter(
+            (p) =>
+              (p.lower_name || p.name || "").toLowerCase().includes(q) ||
+              (p.sku || "").toLowerCase().includes(q),
+          );
+        if (cat)
+          out = out.filter((p) => (p.category_name_list || []).includes(cat));
+        const s = els.sort.value;
+        const cmp = {
+          updated_desc: (a, b) => (b.updated_time || 0) - (a.updated_time || 0),
+          updated_asc: (a, b) => (a.updated_time || 0) - (b.updated_time || 0),
+          name_asc: (a, b) =>
+            (a.name || "").localeCompare(b.name || "", "he"),
+          price_desc: (a, b) => (b.price || 0) - (a.price || 0),
+          price_asc: (a, b) => (a.price || 0) - (b.price || 0),
+          qty_desc: (a, b) => (b.qty || 0) - (a.qty || 0),
+          qty_asc: (a, b) => (a.qty || 0) - (b.qty || 0),
+        }[s];
+        if (cmp) out = [...out].sort(cmp);
+        return out;
+      }
+
+      function refreshPickedChip() {
+        const n = picked.size;
+        if (n === 0) {
+          els.pickedChip.style.display = "none";
+          showOnlyPicked = false;
+          els.onlyPicked.textContent = "הצג";
+          return;
+        }
+        els.pickedChip.style.display = "inline-flex";
+        els.pickedCount.textContent = n;
+      }
+
+      function imgFor(p) {
+        return (
+          p.thumb_image?.url ||
+          (p.images && p.images[0]?.url) ||
+          ""
+        );
+      }
+      function fmtPrice(p) {
+        const v = Number(p.price || 0);
+        return v.toLocaleString("he-IL", {
+          style: "currency",
+          currency: "ILS",
+          minimumFractionDigits: 2,
+        });
+      }
+      function qtyClass(q) {
+        if (q === 0) return "out";
+        if (q <= 5) return "low";
+        return "";
+      }
+
+      function renderGrid() {
+        const list = filterSort(products);
+        els.visible.textContent = list.length;
+        if (!list.length) {
+          els.grid.innerHTML = `<div class="empty">אין תוצאות${products.length ? "" : " — עדיין לא נטען"}</div>`;
+          return;
+        }
+        const html = list
+          .map((p, i) => {
+            const url = imgFor(p);
+            const cats = (p.category_name_list || []).slice(0, 2);
+            const listed =
+              typeof p.active_listings === "number"
+                ? p.active_listings
+                : (p.active_listings || []).length;
+            const isPicked = picked.has(p.id);
+            return `
+            <article class="card ${isPicked ? "picked" : ""}" data-i="${products.indexOf(p)}" data-id="${p.id}">
+              <div class="img-wrap">
+                ${url ? `<img loading="lazy" src="${url}" alt="" onerror="this.style.display='none'">` : ""}
+                <button class="pick" title="סמן" aria-label="סמן">
+                  <svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg>
+                </button>
+                <span class="qty-pill ${qtyClass(p.qty)}">${p.qty ?? 0} ביח'</span>
+                ${listed ? `<span class="listed-pill">listed · ${listed}</span>` : ""}
+              </div>
+              <div class="body">
+                <div class="name" title="${(p.name || "").replace(/"/g, "&quot;")}">${p.name || "—"}</div>
+                <div class="sku">${p.sku || "—"}</div>
+                <div class="price-row"><span class="price">${fmtPrice(p)}</span></div>
+                ${
+                  cats.length
+                    ? `<div class="cats">${cats.map((c) => `<span class="cat">${c}</span>`).join("")}</div>`
+                    : ""
+                }
+              </div>
+            </article>`;
+          })
+          .join("");
+        els.grid.innerHTML = html;
+        for (const card of els.grid.querySelectorAll(".card")) {
+          // Pick button — stop bubbling so it doesn't open drawer
+          card.querySelector(".pick").addEventListener("click", (e) => {
+            e.stopPropagation();
+            const id = card.dataset.id;
+            togglePick(id);
+            card.classList.toggle("picked");
+            refreshPickedChip();
+          });
+          card.addEventListener("click", () => {
+            const idx = +card.dataset.i;
+            openDrawer(products[idx]);
+          });
+        }
+        refreshPickedChip();
+      }
+
+      function openDrawer(p) {
+        const imgs = (p.images || []).map((i) => i.url).filter(Boolean);
+        const cats = (p.category_name_list || []).join("، ");
+        els.drawer.innerHTML = `
+          <button class="btn" id="closeDrawer" style="float:inline-start">סגור ✕</button>
+          <h3 style="clear:both">${p.name || "—"}</h3>
+          <div class="sku">${p.sku || ""}</div>
+          ${
+            imgs.length
+              ? `<div class="imgs">${imgs.map((u) => `<img loading="lazy" src="${u}" alt="" onerror="this.style.display='none'">`).join("")}</div>`
+              : ""
+          }
+          <dl class="meta">
+            <dt>מחיר</dt><dd>${fmtPrice(p)}</dd>
+            <dt>מלאי</dt><dd>${p.qty ?? 0}</dd>
+            <dt>מק"ט</dt><dd>${p.sku || "—"}</dd>
+            <dt>קטגוריות</dt><dd>${cats || "—"}</dd>
+            <dt>משקל</dt><dd>${p.weight ?? 0} ${p.weight_units || ""}</dd>
+            <dt>עודכן</dt><dd>${p.updated_at || "—"}</dd>
+            <dt>נוצר</dt><dd>${p.created_at || "—"}</dd>
+            ${p.seo_url ? `<dt>קישור</dt><dd><a href="${p.seo_url}" target="_blank" rel="noopener">פתח באתר המקור ↗</a></dd>` : ""}
+          </dl>
+          ${p.description ? `<div class="desc">${p.description}</div>` : ""}
+        `;
+        document
+          .getElementById("closeDrawer")
+          .addEventListener("click", closeDrawer);
+        els.drawer.classList.add("open");
+        els.drawerBg.classList.add("open");
+        els.drawer.setAttribute("aria-hidden", "false");
+      }
+      function closeDrawer() {
+        els.drawer.classList.remove("open");
+        els.drawerBg.classList.remove("open");
+        els.drawer.setAttribute("aria-hidden", "true");
+      }
+      els.drawerBg.addEventListener("click", closeDrawer);
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeDrawer();
+      });
+
+      let renderTimer = null;
+      function scheduleRender() {
+        clearTimeout(renderTimer);
+        renderTimer = setTimeout(renderGrid, 80);
+      }
+      els.q.addEventListener("input", scheduleRender);
+      els.cat.addEventListener("change", renderGrid);
+      els.sort.addEventListener("change", renderGrid);
+      els.reload.addEventListener("click", () => loadAll(true));
+      els.reload.title = "רענן מהשרת (התעלם מ-cache)";
+
+      els.clearPicked.addEventListener("click", () => {
+        if (picked.size === 0) return;
+        if (!confirm(`לנקות ${picked.size} בחירות?`)) return;
+        picked.clear();
+        savePicked();
+        showOnlyPicked = false;
+        els.onlyPicked.textContent = "הצג";
+        renderGrid();
+      });
+      els.onlyPicked.addEventListener("click", () => {
+        showOnlyPicked = !showOnlyPicked;
+        els.onlyPicked.textContent = showOnlyPicked ? "הצג הכל" : "הצג";
+        renderGrid();
+      });
+      els.exportPicked.addEventListener("click", () => {
+        const list = products.filter((p) => picked.has(p.id));
+        const blob = new Blob([JSON.stringify(list, null, 2)], {
+          type: "application/json",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `picked-${list.length}-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      });
+
+      (async () => {
+        loadPicked();
+        creds = loadCreds();
+        if (!creds || !creds.authorization) {
+          openTokenModal();
+          return;
+        }
+        await loadAll();
+      })();
+    </script>
+  </body>
+</html>
